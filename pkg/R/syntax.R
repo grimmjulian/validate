@@ -166,7 +166,31 @@ NULL
   
   condition  <- do.call(paste, c(mget(Lvars, parent.frame()), sep="|"))
   consequent <- do.call(paste0, c(mget(Rvars, parent.frame()), sep="|"))
-  cf <- .Call("R_fdcheck", condition, consequent)
+  # cf <- .Call("R_fdcheck", condition, consequent)
+
+  hash <- new.env()
+  cf <- seq_along(condition)
+
+  for (i in seq_along(cf)) {
+    cond_i <- condition[i]
+    cons_i <- consequent[i]
+    if (is.null(hash[[cond_i]])) {
+      hash[[cond_i]] <- list(
+        consequent = cons_i,
+        fail = FALSE
+      )
+      cf[i] <- i
+    } else if (isTRUE(hash[[cond_i]][["fail"]])) {
+      cf[i] <- 0
+    } else if (hash[[cond_i]][["consequent"]] == cons_i) {
+      cf[i] <- i
+    } else {
+      hash[[cond_i]]["fail"] <- TRUE
+      cf[1:i][condition[1:i] == cond_i] <- 0
+    }
+  }
+
+
   cf == seq_along(cf)
 }
 
